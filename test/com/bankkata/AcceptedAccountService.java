@@ -1,6 +1,8 @@
 package com.bankkata;
 
 
+import java.lang.reflect.Field;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -19,21 +21,23 @@ public class AcceptedAccountService {
     private AccountService accountService;
 
     @Before
-    public void SetUp() {
-        accountService = new AccountService(console, clock);
+    public void SetUp() throws NoSuchFieldException, IllegalAccessException {
+        accountService = new AccountService();
+        inject(new AccountServiceControl(clock, new ArrayListRepository(), console));
+    }
+
+    private void inject(AccountServiceControl accountServiceControl) throws
+                                                                     NoSuchFieldException,
+                                                                     IllegalAccessException {
+        Field control = accountService.getClass().getDeclaredField("control");
+        control.setAccessible(true);
+        control.set(accountService, accountServiceControl);
     }
 
     @Test
     public void should_print_only_the_header_when_there_are_no_transactions() throws Exception{
         accountService.printStatement();
         verify(console).printLine("DATE | AMOUNT | BALANCE");
-        verifyNoMoreInteractions(console);
-    }
-
-    @Test
-    public void should_not_print_anything_if_printStatement_is_not_invoked() throws Exception{
-        when(clock.now()).thenReturn("01/04/2014");
-        accountService.deposit(100);
         verifyNoMoreInteractions(console);
     }
 
